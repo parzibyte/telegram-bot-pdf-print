@@ -1,9 +1,31 @@
 require("dotenv").config();
+const fs = require("node:fs");
+const nombreArchivoPreferencias = "impresoras.json";
 const TelegramBot = require('node-telegram-bot-api');
 const token = process.env.TELEGRAM_BOT_TOKEN;
 const bot = new TelegramBot(token, { polling: true });
 const serial = process.env.LICENCIA_PLUGIN;
 let idsUsuarioConImpresoraPreferida = {};
+
+fs.readFile(nombreArchivoPreferencias, (err, data) => {
+    if (err) {
+        return;
+    }
+    idsUsuarioConImpresoraPreferida = JSON.parse(data.toString());
+})
+
+const guardarPreferencias = (cb) => {
+    fs.writeFile(nombreArchivoPreferencias, JSON.stringify(idsUsuarioConImpresoraPreferida), cb);
+}
+const obtenerVersion = async () => {
+    try {
+        const urlInvocacion = `http://localhost:8080/version`;
+        const httpResponse = await fetch(urlInvocacion);
+        return await httpResponse.json();
+    } catch (e) {
+        return e.message;
+    }
+}
 const obtenerImpresoras = async () => {
     try {
         const urlInvocacion = `http://localhost:8080/impresoras`;
@@ -93,7 +115,9 @@ bot.on('callback_query', (query) => {
     const impresoraSeleccionada = query.data;
     const idUsuario = query.from.id;
     idsUsuarioConImpresoraPreferida[idUsuario] = impresoraSeleccionada;
-    bot.sendMessage(idChat, `Tu impresora preferida es ahora '${impresoraSeleccionada}'`);
+    guardarPreferencias(() => {
+        bot.sendMessage(idChat, `Tu impresora preferida es ahora '${impresoraSeleccionada}'`);
+    });
 });
 
 bot.on('message', async (msg) => {
@@ -107,15 +131,16 @@ bot.on('message', async (msg) => {
     const impresoraPreferida = idsUsuarioConImpresoraPreferida[idUsuario];
     if (msg.text) {
         if (msg.text.startsWith("/impresoras")) {
-            await responderConImpresoras();
+            await responderConImpresoras(idChat);
             return;
         } else if (msg.text.startsWith("http")) {
-
-            bot.sendMessage(idChat, "Imprimiendo PDF a partir de URL...");
+            await bot.sendMessage(idChat, `Imprimiendo PDF a partir de URL en ${impresoraPreferida}...`);
             await descargarPdfYResponderAlUsuario(msg.text, impresoraPreferida, idChat);
+        } else if (msg.text.startsWith("/version")) {
+            await bot.sendMessage(idChat, JSON.stringify(await obtenerVersion()));
         }
     } else if (msg.document) {
-        bot.sendMessage(idChat, "Descargando e imprimiendo PDF...");
+        bot.sendMessage(idChat, `Descargando e imprimiendo PDF en ${impresoraPreferida}...`);
         await imprimirPdfEnviadoComoArchivo(msg, impresoraPreferida);
     }
 });
