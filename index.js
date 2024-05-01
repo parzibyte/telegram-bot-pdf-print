@@ -110,6 +110,22 @@ const descargarPdfYResponderAlUsuario = async (urlArchivo, impresora, idChat) =>
     }
     await bot.sendMessage(idChat, respuesta.substring(0, 4096));
 }
+
+const mostrarAyuda = async (idChat) => {
+    await bot.sendMessage(idChat, `*Configurando plugin*
+1. Necesitas ejecutar el plugin y configurarlo como se indica en: https://parzibyte.me/blog
+2. Luego, elige tu impresora predeterminada con /impresoras, solo necesitas hacerlo una vez y a partir de ahí se usará la misma impresora para todas las operaciones
+
+*Modo de uso*
+
+- Envía un PDF como archivo y será impreso automáticamente. Puedes indicar el nombre de la impresora en la descripción del archivo y tomará precedencia al de la impresora predeterminada
+- Envía un enlace de un PDF y será impreso automáticamente
+
+También puedes usar los siguientes comandos: 
+/impresoras elige la impresora preferida para el usuario
+/version muestra la versión del plugin. Útil para conocer el estado de ejecución del plugin
+/ayuda muestra este mensaje de ayuda`, { parse_mode: "Markdown" });
+}
 bot.on('callback_query', (query) => {
     const idChat = query.message.chat.id;
     const impresoraSeleccionada = query.data;
@@ -138,9 +154,13 @@ bot.on('message', async (msg) => {
             await descargarPdfYResponderAlUsuario(msg.text, impresoraPreferida, idChat);
         } else if (msg.text.startsWith("/version")) {
             await bot.sendMessage(idChat, JSON.stringify(await obtenerVersion()));
+        } else if (msg.text.startsWith("/ayuda")) {
+            await mostrarAyuda(idChat);
+        } else {
+            await mostrarAyuda(idChat);
         }
     } else if (msg.document) {
-        bot.sendMessage(idChat, `Descargando e imprimiendo PDF en ${impresoraPreferida}...`);
+        await bot.sendMessage(idChat, `Descargando e imprimiendo PDF en ${impresoraPreferida}...`);
         await imprimirPdfEnviadoComoArchivo(msg, impresoraPreferida);
     }
 });
