@@ -113,7 +113,7 @@ const descargarPdfYResponderAlUsuario = async (urlArchivo, impresora, idChat) =>
 
 const mostrarAyuda = async (idChat) => {
     await bot.sendMessage(idChat, `*Configurando plugin*
-1. Necesitas ejecutar el plugin y configurarlo como se indica en: https://parzibyte.me/blog
+1. Necesitas ejecutar el plugin y configurarlo como se indica en: https://parzibyte.me/blog/2024/05/02/imprimir-pdf-bot-telegram/
 2. Luego, elige tu impresora predeterminada con /impresoras, solo necesitas hacerlo una vez y a partir de ahí se usará la misma impresora para todas las operaciones
 
 *Modo de uso*
